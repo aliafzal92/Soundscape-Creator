@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlay, faStop, faVolumeUp, faVolumeMute } from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faStop, faVolumeUp, faVolumeMute, faMoon, faSun, faWater, faTree, faGhost } from '@fortawesome/free-solid-svg-icons';
 import './App.css';
 
 // Audio manager to handle all audio elements
@@ -66,11 +66,13 @@ class AudioManager {
 
 function App() {
   const [sounds, setSounds] = useState([]);
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [masterVolume, setMasterVolume] = useState(0.7);
+  const [masterVolume, setMasterVolume] = useState(0.5);
   const [isPlayingAll, setIsPlayingAll] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('all');
   const [activePreset, setActivePreset] = useState(null);
+  const [activeTheme, setActiveTheme] = useState('default'); // 'default', 'nature', 'water', 'horror'
   const audioManager = useRef(new AudioManager());
+  const volumeUpdateTimer = useRef(null);
 
   // Preset configurations
   const presets = {
@@ -236,22 +238,28 @@ function App() {
     }
   };
 
+  // Track which sounds are part of the active preset
+  const [presetSoundIds, setPresetSoundIds] = useState([]);
+
   const loadPreset = useCallback(async (presetId) => {
     await stopAllSounds();
     setActivePreset(presetId);
     
     const preset = presets[presetId];
     if (!preset) return;
+    
+    // Store the sound IDs that are part of this preset
+    setPresetSoundIds(preset.sounds);
 
     // Play each sound in the preset with a small delay
     for (const soundId of preset.sounds) {
       const sound = sounds.find(s => s.id === soundId);
       if (sound) {
-        setSounds(prev => 
-          prev.map(s => 
+        setSounds(prev => {
+          return prev.map(s => 
             s.id === soundId ? { ...s, isPlaying: true } : s
-          )
-        );
+          );
+        });
         
         const audioPath = sound.file.startsWith('/audio/') ? sound.file : `/audio/${sound.file}`;
         const audioUrl = `http://localhost:3001${audioPath}`;
@@ -275,9 +283,14 @@ function App() {
     // Set isPlayingAll to true after loading the preset
     setIsPlayingAll(true);
   }, [sounds, stopAllSounds, masterVolume]);
+  
+  // Clear preset and show all sounds
+  const clearPreset = useCallback(() => {
+    setActivePreset(null);
+    setPresetSoundIds([]);
+  }, []);
 
-  // Use useRef to store the volume update timer
-  const volumeUpdateTimer = useRef(null);
+  // volumeUpdateTimer is already declared at the top level
   
   const handleMasterVolumeChange = useCallback((e) => {
     const newVolume = parseFloat(e.target.value);
@@ -302,14 +315,24 @@ function App() {
   }, [sounds]);
 
   // Get unique categories from sounds, preserving original case for display
-  const categories = ['all', ...new Set(sounds.map(sound => sound.category).filter(Boolean))];
+  const categories = ['all', ...new Set(sounds.map(sound => sound.category?.toLowerCase()).filter(Boolean))];
   
-  // Filter sounds based on active category (case-insensitive comparison)
-  const filteredSounds = activeCategory === 'all' 
-    ? sounds 
-    : sounds.filter(sound => 
-        sound.category?.toLowerCase() === activeCategory.toLowerCase()
-      );
+  // Filter sounds based on active category and preset
+  const filteredSounds = (() => {
+    // First filter by category
+    const categoryFiltered = activeCategory.toLowerCase() === 'all' 
+      ? sounds 
+      : sounds.filter(sound => 
+          sound.category?.toLowerCase() === activeCategory.toLowerCase()
+        );
+    
+    // Then, if a preset is active, only show sounds that are part of the preset
+    if (activePreset && presetSoundIds.length > 0) {
+      return categoryFiltered.filter(sound => presetSoundIds.includes(sound.id));
+    }
+    
+    return categoryFiltered;
+  })();
       
   // Function to get display name for category (capitalized)
   const getDisplayCategory = (category) => {
@@ -317,15 +340,120 @@ function App() {
     return category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
   };
 
-  return (
-    <div className="container">
-      <header className="header">
-        <h1 className="title">🎵 Soundscape Creator</h1>
-        <p className="subtitle">
-          Create your perfect ambient environment by layering natural sounds
-        </p>
-      </header>
+  // Function to change theme
+  const changeTheme = (theme) => {
+    setActiveTheme(theme);
+    
+    // Remove all theme classes from body
+    document.body.classList.remove('theme-nature', 'theme-water', 'theme-horror');
+    
+    // Add the new theme class to body
+    if (theme !== 'default') {
+      document.body.classList.add(`theme-${theme}`);
+    }
+  };
 
+  // Get theme-specific class
+  const getThemeClass = () => {
+    switch (activeTheme) {
+      case 'nature':
+        return 'theme-nature';
+      case 'water':
+        return 'theme-water';
+      case 'horror':
+        return 'theme-horror';
+      default:
+        return '';
+    }
+  };
+  
+  // Apply theme to body on component mount and cleanup on unmount
+  useEffect(() => {
+    // Apply initial theme
+    if (activeTheme !== 'default') {
+      document.body.classList.add(`theme-${activeTheme}`);
+    }
+    
+    // Cleanup function to remove theme classes when component unmounts
+    return () => {
+      document.body.classList.remove('theme-nature', 'theme-water', 'theme-horror');
+    };
+  }, []);
+
+  return (
+    <div className={`container ${getThemeClass()}`}>
+      {/* Particle Effects */}
+      <div className="particles-container">
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+      </div>
+
+      <header className="header">
+        <h1 className="title">Soundscape Creator</h1>
+        <p className="subtitle">Mix ambient sounds for focus, relaxation, or immersion</p>
+        
+        {/* Theme Switcher */}
+        <div className="theme-switcher">
+          <div className="theme-btn-container">
+            <button 
+              className={`theme-btn ${activeTheme === 'default' ? 'active' : ''}`} 
+              onClick={() => changeTheme('default')}
+              title="Default Theme"
+            >
+              <FontAwesomeIcon icon={faSun} />
+            </button>
+            <div className="theme-preview default-preview">
+              <div className="preview-title">Default Theme</div>
+              <div className="preview-description">Clean, modern UI with blue and green accents</div>
+            </div>
+          </div>
+          
+          <div className="theme-btn-container">
+            <button 
+              className={`theme-btn ${activeTheme === 'nature' ? 'active' : ''}`} 
+              onClick={() => changeTheme('nature')}
+              title="Nature Theme"
+            >
+              <FontAwesomeIcon icon={faTree} />
+            </button>
+            <div className="theme-preview nature-preview">
+              <div className="preview-title">Nature Theme</div>
+              <div className="preview-description">Earthy greens with forest-inspired elements</div>
+            </div>
+          </div>
+          
+          <div className="theme-btn-container">
+            <button 
+              className={`theme-btn ${activeTheme === 'water' ? 'active' : ''}`} 
+              onClick={() => changeTheme('water')}
+              title="Water Theme"
+            >
+              <FontAwesomeIcon icon={faWater} />
+            </button>
+            <div className="theme-preview water-preview">
+              <div className="preview-title">Water Theme</div>
+              <div className="preview-description">Calming blues and teals with flowing elements</div>
+            </div>
+          </div>
+          
+          <div className="theme-btn-container">
+            <button 
+              className={`theme-btn ${activeTheme === 'horror' ? 'active' : ''}`} 
+              onClick={() => changeTheme('horror')}
+              title="Horror Theme"
+            >
+              <FontAwesomeIcon icon={faGhost} />
+            </button>
+            <div className="theme-preview horror-preview">
+              <div className="preview-title">Horror Theme</div>
+              <div className="preview-description">Dark atmosphere with blood red and deep purple accents</div>
+            </div>
+          </div>
+        </div>
+      </header>
 
       <main className="main">
         {/* Master Controls */}
@@ -381,6 +509,15 @@ function App() {
                   {preset.icon} {preset.name}
                 </button>
               ))}
+              {activePreset && (
+                <button
+                  className="filter-btn clear-preset-btn"
+                  onClick={clearPreset}
+                  title="Show all sounds"
+                >
+                  ❌ Clear Preset
+                </button>
+              )}
             </div>
           </div>
           
