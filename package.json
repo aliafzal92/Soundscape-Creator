@@ -1,0 +1,28 @@
+{
+  "name": "soundscape-creator-root",
+  "version": "1.0.0",
+  "description": "Soundscape Creator - A modern web application for creating custom ambient soundscapes",
+  "scripts": {
+    "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "client": "cd frontend && npm run dev",
+    "server": "cd backend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "node backend/server.js",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "preview": "cd frontend && npm run preview:prod"
+  },
+  "keywords": [
+    "soundscape",
+    "ambient",
+    "sounds",
+    "relaxation",
+    "react",
+    "node",
+    "express"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

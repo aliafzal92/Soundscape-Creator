@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Audio Playback Test</h1>
+    <div>
+        <button onclick="playSound('rain')">Play Rain</button>
+        <button onclick="playSound('ocean')">Play Ocean</button>
+        <button onclick="playSound('birds')">Play Birds</button>
+        <button onclick="stopAll()">Stop All</button>
+    </div>
+    <div id="status">Status: Ready</div>
+
+    <script>
+        const sounds = {
+            rain: new Howl({
+                src: ['http://localhost:3001/audio/rain.mp3'],
+                loop: true,
+                onload: () => console.log('Rain loaded'),
+                onloaderror: (id, err) => console.error('Rain load error:', err)
+            }),
+            ocean: new Howl({
+                src: ['http://localhost:3001/audio/ocean.mp3'],
+                loop: true,
+                onload: () => console.log('Ocean loaded'),
+                onloaderror: (id, err) => console.error('Ocean load error:', err)
+            }),
+            birds: new Howl({
+                src: ['http://localhost:3001/audio/birds.mp3'],
+                loop: true,
+                onload: () => console.log('Birds loaded'),
+                onloaderror: (id, err) => console.error('Birds load error:', err)
+            })
+        };
+
+        function playSound(soundName) {
+            const sound = sounds[soundName];
+            if (sound.playing()) {
+                sound.stop();
+                document.getElementById('status').textContent = `Status: Stopped ${soundName}`;
+            } else {
+                sound.play();
+                document.getElementById('status').textContent = `Status: Playing ${soundName}`;
+            }
+        }
+
+        function stopAll() {
+            Object.values(sounds).forEach(sound => sound.stop());
+            document.getElementById('status').textContent = 'Status: All sounds stopped';
+        }
+
+        // Log when sounds are ready
+        Howler.on('load', () => console.log('Howler loaded'));
+        Howler.on('loaderror', (id, err) => console.error('Howler load error:', err));
+        Howler.on('playerror', (id, err) => console.error('Howler play error:', err));
+    </script>
+</body>
+</html>
