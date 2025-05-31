@@ -407,7 +407,7 @@ function App() {
             </button>
             <div className="theme-preview default-preview">
               <div className="preview-title">Default Theme</div>
-              <div className="preview-description">Clean, modern UI with blue and green accents</div>
+              <div className="preview-description">Elegant black & white aesthetic</div>
             </div>
           </div>
           
